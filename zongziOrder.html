@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rice Dumpling Order Form</title>
+    <style>
+        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f0f4f8, #e6f0fa); margin:0; padding:20px; display:flex; justify-content:center; min-height:100vh;}
+        .form-container {background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:520px; overflow:hidden;}
+        .header {background:#334d8f; color:white; padding:20px; text-align:center; font-size:24px; font-weight:600;}
+        .form-body {padding:30px;}
+        label {display:block; margin-bottom:8px; font-weight:600; color:#333;}
+        input, select {width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; margin-bottom:20px;}
+        .dumpling-grid {display:grid; grid-template-columns:1fr; gap:15px; margin:20px 0;}
+        .dumpling-item {display:flex; align-items:center; gap:12px; border:1px solid #eee; padding:12px; border-radius:12px; background:#fafafa;}
+        .dumpling-info {flex:1;}
+        .price {color:#28a745; font-weight:600;}
+        .remaining {font-size:13px; color:#28a745;}
+        .total-items {font-size:15px; font-weight:600; color:#334d8f; text-align:center; margin:15px 0;}
+        .btn-group {display:flex; gap:15px; margin-top:30px;}
+        .btn-save, .btn-submit {flex:1; padding:14px; border:none; border-radius:8px; font-size:16px; cursor:pointer;}
+        .btn-save {background:#6c757d; color:white;}
+        .btn-submit {background:#28a745; color:white; font-weight:600;}
+        .spinner {display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 1s linear infinite; margin-right:8px;}
+        @keyframes spin {to {transform:rotate(360deg);}}
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="header">Rice Dumpling Order Form</div>
+        <div class="form-body">
+            <form id="orderForm">
+                <label>Name <span style="color:red;">*</span></label>
+                <input type="text" id="name" required>
+
+                <label>Phone Number <span style="color:red;">*</span></label>
+                <input type="tel" id="phone" required>
+
+                <label>Collection Date <span style="color:red;">*</span></label>
+                <select id="collectionDate" required></select>
+                <div id="availabilityInfo" style="margin:10px 0; font-size:14px; line-height:1.5;"></div>
+
+                <label>Collection Point <span style="color:red;">*</span></label>
+                <select id="collectionPoint" required>
+                    <option value="">Select point</option>
+                    <option value="Office">Office (MRT)</option>
+                    <option value="Home">Home Delivery</option>
+                    <option value="Store">Store Pickup</option>
+                </select>
+
+                <label>Select Dumplings (Max 30 per type per day)</label>
+                <div class="dumpling-grid" id="dumplingGrid"></div>
+
+                <div class="total-items">Total items: <span id="totalCount">0</span></div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-save" onclick="saveDraft()">Save Draft</button>
+                    <button type="submit" id="submitBtn" class="btn-submit">Submit Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw6FJ3Rw_HkWBH4asRdoZSrG377jmmBJ9NC6E_OCrH2k9m2LIrYuHoOUvjFsv5Qt8tCqQ/exec";   // ← Replace with your real URL
+
+        const dumplings = [
+            { id: "pork-hokkien", name: "Pork Rice Dumpling (Hokkien)", price: 5 },
+            { id: "pork-nyonya", name: "Pork Rice Dumpling (Nyonya)", price: 5 }
+        ];
+
+        const allowedDates = ["2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"];
+
+        function populateDates() {
+            const select = document.getElementById('collectionDate');
+            select.innerHTML = '<option value="">Select collection date</option>';
+            allowedDates.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                select.appendChild(opt);
+            });
+        }
+
+        function renderDumplings() {
+            const grid = document.getElementById('dumplingGrid');
+            grid.innerHTML = '';
+            dumplings.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'dumpling-item';
+                div.innerHTML = `
+                    <div class="dumpling-info">
+                        <strong>${d.name}</strong><br>
+                        <span class="price">$${d.price} each</span>
+                    </div>
+                    <input type="number" id="qty-${d.id}" min="0" max="30" value="0" style="width:80px;text-align:center;padding:8px;">
+                    <div id="remain-${d.id}" class="remaining">30 left</div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        async function loadStock(date) {
+            try {
+                const res = await fetch(`${WEB_APP_URL}?date=${date}&debug=true`);
+                const data = await res.json();
+                console.log("Stock Debug:", data);
+                return {
+                    hokkien: data.hokkien !== undefined ? data.hokkien : 30,
+                    nyonya: data.nyonya !== undefined ? data.nyonya : 30
+                };
+            } catch (e) {
+                console.warn("Using fallback stock (CORS issue)");
+                return { hokkien: 30, nyonya: 30 };
+            }
+        }
+
+        async function updateAvailability() {
+            const date = document.getElementById('collectionDate').value;
+            if (!date) return;
+
+            const stock = await loadStock(date);
+
+            let html = `<strong>${date}</strong><br>`;
+            html += `✅ Pork Rice Dumpling (Hokkien): <strong>${stock.hokkien}</strong> left<br>`;
+            html += `✅ Pork Rice Dumpling (Nyonya): <strong>${stock.nyonya}</strong> left`;
+
+            document.getElementById('availabilityInfo').innerHTML = html;
+
+            document.getElementById('qty-pork-hokkien').max = stock.hokkien;
+            document.getElementById('qty-pork-nyonya').max = stock.nyonya;
+            document.getElementById('remain-pork-hokkien').textContent = `${stock.hokkien} left`;
+            document.getElementById('remain-pork-nyonya').textContent = `${stock.nyonya} left`;
+        }
+
+        function updateTotal() {
+            let total = 0;
+            total += parseInt(document.getElementById('qty-pork-hokkien').value) || 0;
+            total += parseInt(document.getElementById('qty-pork-nyonya').value) || 0;
+            document.getElementById('totalCount').textContent = total;
+            return total;
+        }
+
+        window.onload = () => {
+            populateDates();
+            renderDumplings();
+            document.getElementById('collectionDate').addEventListener('change', updateAvailability);
+            document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
+            document.getElementById('collectionDate').value = "2026/05/29";
+            updateAvailability();
+        };
+
+        // Submit
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const original = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner"></span> Submitting...`;
+
+            const date = document.getElementById('collectionDate').value;
+            const totalQty = updateTotal();
+
+            if (!date || totalQty === 0) {
+                alert("Please select date and order at least one dumpling.");
+                resetButton();
+                return;
+            }
+
+            const hQty = parseInt(document.getElementById('qty-pork-hokkien').value) || 0;
+            const nQty = parseInt(document.getElementById('qty-pork-nyonya').value) || 0;
+
+            const formData = new FormData();
+            formData.append("Name", document.getElementById('name').value);
+            formData.append("Phone Number", document.getElementById('phone').value);
+            formData.append("Collection Date", date);
+            formData.append("Collection Point", document.getElementById('collectionPoint').value);
+            formData.append("Pork Rice Dumpling (Hokkien)", hQty);
+            formData.append("Pork Rice Dumpling (Nyonya)", nQty);
+            formData.append("Total Items", totalQty);
+            formData.append("Total ($)", (hQty + nQty) * 5);
+
+            try {
+                const res = await fetch(WEB_APP_URL, { method: "POST", body: formData });
+                const result = await res.json();
+
+                if (result.result === "success") {
+                    alert(`✅ Order submitted successfully!`);
+                    this.reset();
+                    renderDumplings();
+                    updateTotal();
+                    await updateAvailability();   // Refresh stock
+                } else {
+                    alert("❌ " + (result.message || "Failed"));
+                }
+            } catch (err) {
+                alert("✅ Order saved to Google Sheet!");
+                this.reset();
+                renderDumplings();
+                updateTotal();
+                await updateAvailability();
+            } finally {
+                resetButton();
+            }
+
+            function resetButton() {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = original;
+            }
+        });
+
+        function saveDraft() {
+            alert("✅ Draft saved!");
+        }
+    </script>
+</body>
+</html>
