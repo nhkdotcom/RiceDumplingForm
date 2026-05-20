@@ -38,7 +38,7 @@
 
                 <label>Collection Date <span style="color:red;">*</span></label>
                 <select id="collectionDate" required></select>
-                <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5;"></div>
+                <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5; font-weight:500;"></div>
 
                 <label>Collection Point <span style="color:red;">*</span></label>
                 <input type="text" id="collectionPoint" value="Office" required>
@@ -100,32 +100,23 @@
 
         async function loadStock(date) {
             try {
-                console.log("🔍 Fetching stock for date:", date);
-                
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?collection_date=eq.${date}&select=rendang_qty`, {
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
                     }
                 });
-
                 const data = await res.json();
-                console.log("📊 Data from Supabase:", data);
 
                 let sold = 0;
                 if (Array.isArray(data)) {
-                    data.forEach(row => {
-                        sold += Number(row.rendang_qty || 0);
-                    });
+                    data.forEach(row => sold += Number(row.rendang_qty || 0));
                 }
 
                 const remaining = Math.max(0, 30 - sold);
-                console.log(`✅ Remaining on ${date}: ${remaining} (sold: ${sold})`);
-
                 return { rendang: remaining };
-
             } catch (e) {
-                console.error("❌ Error loading stock:", e);
+                console.error(e);
                 return { rendang: 30 };
             }
         }
@@ -138,9 +129,6 @@
 
             document.getElementById('availabilityInfo').innerHTML = 
                 `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
-
-            document.getElementById('qty-rendang').max = stock.rendang;
-            document.getElementById('remain-rendang').textContent = `${stock.rendang} left`;
         }
 
         function updateTotal() {
@@ -152,9 +140,14 @@
         window.onload = () => {
             populateDates();
             renderDumplings();
-            document.getElementById('collectionDate').addEventListener('change', updateAvailability);
+
+            const dateSelect = document.getElementById('collectionDate');
+            dateSelect.addEventListener('change', updateAvailability);
+            
             document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
-            document.getElementById('collectionDate').value = "2026/06/24";
+
+            // Set default date
+            dateSelect.value = "2026/06/24";
             updateAvailability();
         };
 
@@ -196,7 +189,7 @@
                     updateTotal();
                     await updateAvailability();
                 } else {
-                    alert("❌ Failed to submit");
+                    alert("❌ Failed to submit order");
                 }
             } catch (err) {
                 alert("✅ Order saved to database!");
