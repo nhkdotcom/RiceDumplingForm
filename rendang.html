@@ -98,7 +98,7 @@
             });
         }
 
-        async function updateAvailability() {
+        function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
             document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>30</strong> left`;
@@ -140,7 +140,8 @@
             };
 
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders`, {   // ← Changed table name
+                console.log("Sending to table: beef_rendang_orders");
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders`, {
                     method: "POST",
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
@@ -150,18 +151,20 @@
                     body: JSON.stringify(formData)
                 });
 
+                const responseText = await res.text();
+                console.log("Response:", res.status, responseText);
+
                 if (res.ok) {
                     alert("✅ Beef Rendang Order submitted successfully!");
                     this.reset();
                     renderDumplings();
                     updateTotal();
-                    await updateAvailability();
                 } else {
-                    const errorText = await res.text();
-                    alert("❌ Failed: " + errorText);
+                    alert("❌ Error: " + responseText);
                 }
             } catch (err) {
-                alert("✅ Order saved (check Supabase Table Editor)");
+                console.error(err);
+                alert("❌ Connection error. Please check console (F12)");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
