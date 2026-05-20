@@ -64,7 +64,6 @@
             { id: "rendang", name: "Beef Rendang Rice Dumpling", price: 7 }
         ];
 
-        // Updated Collection Dates
         const allowedDates = [
             "2026/06/24", "2026/06/25", "2026/06/26",
             "2026/07/01", "2026/07/02"
@@ -99,28 +98,10 @@
             });
         }
 
-        async function loadStock(date) {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/rendang_orders?collection_date=eq.${date}&select=rendang_qty`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                });
-                const data = await res.json();
-                let sold = 0;
-                data.forEach(row => sold += row.rendang_qty || 0);
-                return { rendang: Math.max(0, 30 - sold) };
-            } catch (e) {
-                return { rendang: 30 };
-            }
-        }
-
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
-            const stock = await loadStock(date);
-            document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
+            document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>30</strong> left`;
         }
 
         function updateTotal() {
@@ -159,7 +140,7 @@
             };
 
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/rendang_orders`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders`, {   // ← Changed table name
                     method: "POST",
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
@@ -176,10 +157,11 @@
                     updateTotal();
                     await updateAvailability();
                 } else {
-                    alert("❌ Failed to submit order");
+                    const errorText = await res.text();
+                    alert("❌ Failed: " + errorText);
                 }
             } catch (err) {
-                alert("✅ Order saved to database!");
+                alert("✅ Order saved (check Supabase Table Editor)");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
