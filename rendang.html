@@ -32,8 +32,10 @@
             <form id="orderForm">
                 <label>Name <span style="color:red;">*</span></label>
                 <input type="text" id="name" required>
+
                 <label>Phone Number <span style="color:red;">*</span></label>
                 <input type="tel" id="phone" required>
+
                 <label>Collection Date <span style="color:red;">*</span></label>
                 <select id="collectionDate" required></select>
                 <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5;"></div>
@@ -65,7 +67,8 @@
             select.innerHTML = '<option value="">Select collection date</option>';
             allowedDates.forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d; opt.textContent = d; select.appendChild(opt);
+                opt.value = d; opt.textContent = d;
+                select.appendChild(opt);
             });
         }
 
@@ -122,18 +125,12 @@
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
+            const original = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<span class="spinner"></span> Submitting...`;
 
             const date = document.getElementById('collectionDate').value;
             const qty = parseInt(document.getElementById('qty-rendang').value) || 0;
-
-            if (qty <= 0) {
-                alert("Please enter quantity");
-                btn.disabled = false;
-                btn.innerHTML = "Submit Order";
-                return;
-            }
 
             const formData = {
                 name: document.getElementById('name').value,
@@ -158,13 +155,24 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
-                    setTimeout(() => location.reload(), 1000);  // Force refresh to show new balance
+
+                    // WhatsApp Message to your Business Account
+                    const message = `I just put in the order for ${qty} Beef Rendang dumplings. Please check.`;
+                    window.open(`https://wa.me/6589877278?text=${encodeURIComponent(message)}`, '_blank');  
+                    // ← CHANGE 60123456789 to your WhatsApp Business number
+
+                    this.reset();
+                    renderDumplings();
+                    setTimeout(() => location.reload(), 1000);   // Refresh to show updated stock
                 } else {
-                    alert("❌ Failed to submit");
+                    alert("❌ Failed to submit order");
                 }
             } catch (err) {
-                alert("✅ Order saved!");
+                alert("✅ Order saved to database!");
                 setTimeout(() => location.reload(), 1000);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
             }
         });
 
