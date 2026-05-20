@@ -5,97 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rice Dumpling Order Form</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f0f4f8, #e6f0fa);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .form-container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 520px;
-            overflow: hidden;
-        }
-        .header {
-            background: #334d8f;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        .form-body { padding: 30px; }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        .dumpling-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .dumpling-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid #eee;
-            padding: 12px;
-            border-radius: 12px;
-            background: #fafafa;
-        }
-        .dumpling-info { flex: 1; }
-        .price { color: #28a745; font-weight: 600; }
-        .remaining { font-size: 13px; color: #28a745; }
-        .total-items {
-            font-size: 15px;
-            font-weight: 600;
-            color: #334d8f;
-            text-align: center;
-            margin: 15px 0;
-        }
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
-        .btn-save, .btn-submit {
-            flex: 1;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .btn-save { background: #6c757d; color: white; }
-        .btn-submit { background: #28a745; color: white; font-weight: 600; }
-        .spinner {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f0f4f8, #e6f0fa); margin:0; padding:20px; display:flex; justify-content:center; min-height:100vh;}
+        .form-container {background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:520px; overflow:hidden;}
+        .header {background:#334d8f; color:white; padding:20px; text-align:center; font-size:24px; font-weight:600;}
+        .form-body {padding:30px;}
+        label {display:block; margin-bottom:8px; font-weight:600; color:#333;}
+        input, select {width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; margin-bottom:20px;}
+        .dumpling-grid {display:grid; grid-template-columns:1fr; gap:15px; margin:20px 0;}
+        .dumpling-item {display:flex; align-items:center; gap:12px; border:1px solid #eee; padding:12px; border-radius:12px; background:#fafafa;}
+        .dumpling-info {flex:1;}
+        .price {color:#28a745; font-weight:600;}
+        .remaining {font-size:13px; color:#28a745;}
+        .total-items {font-size:15px; font-weight:600; color:#334d8f; text-align:center; margin:15px 0;}
+        .btn-group {display:flex; gap:15px; margin-top:30px;}
+        .btn-save, .btn-submit {flex:1; padding:14px; border:none; border-radius:8px; font-size:16px; cursor:pointer;}
+        .btn-save {background:#6c757d; color:white;}
+        .btn-submit {background:#28a745; color:white; font-weight:600;}
+        .spinner {display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 1s linear infinite; margin-right:8px;}
+        @keyframes spin {to {transform:rotate(360deg);}}
     </style>
 </head>
 <body>
@@ -135,7 +62,6 @@
     </div>
 
     <script>
-        // Supabase Config
         const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
@@ -145,8 +71,6 @@
         ];
 
         const allowedDates = ["2026/05/25","2026/05/26","2026/05/27","2026/05/28","2026/05/29","2026/05/30","2026/06/01","2026/06/02","2026/06/03"];
-
-        let dailyStock = {};
 
         function populateDates() {
             const select = document.getElementById('collectionDate');
@@ -198,7 +122,6 @@
                     nyonya: Math.max(0, 30 - nSold)
                 };
             } catch (e) {
-                console.error(e);
                 return { hokkien: 30, nyonya: 30 };
             }
         }
@@ -206,19 +129,12 @@
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
-
             const stock = await loadStock(date);
 
             let html = `<strong>${date}</strong><br>`;
             html += `✅ Pork Rice Dumpling (Hokkien): <strong>${stock.hokkien}</strong> left<br>`;
             html += `✅ Pork Rice Dumpling (Nyonya): <strong>${stock.nyonya}</strong> left`;
-
             document.getElementById('availabilityInfo').innerHTML = html;
-
-            document.getElementById('qty-pork-hokkien').max = stock.hokkien;
-            document.getElementById('qty-pork-nyonya').max = stock.nyonya;
-            document.getElementById('remain-pork-hokkien').textContent = `${stock.hokkien} left`;
-            document.getElementById('remain-pork-nyonya').textContent = `${stock.nyonya} left`;
         }
 
         function updateTotal() {
@@ -266,8 +182,7 @@
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 });
@@ -279,10 +194,10 @@
                     updateTotal();
                     await updateAvailability();
                 } else {
-                    alert("❌ Failed to submit. Please try again.");
+                    alert("❌ Failed to submit order. Please check all fields.");
                 }
             } catch (err) {
-                alert("❌ Connection error. Please check your internet.");
+                alert("❌ Connection error. Please try again.");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
