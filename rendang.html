@@ -5,97 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beef Rendang Rice Dumpling Order Form</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f0f4f8, #e6f0fa);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .form-container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 520px;
-            overflow: hidden;
-        }
-        .header {
-            background: #d35400;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        .form-body { padding: 30px; }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        .dumpling-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .dumpling-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid #eee;
-            padding: 12px;
-            border-radius: 12px;
-            background: #fafafa;
-        }
-        .dumpling-info { flex: 1; }
-        .price { color: #e67e22; font-weight: 600; }
-        .remaining { font-size: 13px; color: #27ae60; }
-        .total-items {
-            font-size: 15px;
-            font-weight: 600;
-            color: #d35400;
-            text-align: center;
-            margin: 15px 0;
-        }
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
-        .btn-save, .btn-submit {
-            flex: 1;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .btn-save { background: #6c757d; color: white; }
-        .btn-submit { background: #d35400; color: white; font-weight: 600; }
-        .spinner {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f0f4f8, #e6f0fa); margin:0; padding:20px; display:flex; justify-content:center; min-height:100vh;}
+        .form-container {background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:520px; overflow:hidden;}
+        .header {background:#d35400; color:white; padding:20px; text-align:center; font-size:24px; font-weight:600;}
+        .form-body {padding:30px;}
+        label {display:block; margin-bottom:8px; font-weight:600; color:#333;}
+        input, select {width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; margin-bottom:20px;}
+        .dumpling-grid {display:grid; grid-template-columns:1fr; gap:15px; margin:20px 0;}
+        .dumpling-item {display:flex; align-items:center; gap:12px; border:1px solid #eee; padding:12px; border-radius:12px; background:#fafafa;}
+        .dumpling-info {flex:1;}
+        .price {color:#e67e22; font-weight:600;}
+        .remaining {font-size:13px; color:#27ae60;}
+        .total-items {font-size:15px; font-weight:600; color:#d35400; text-align:center; margin:15px 0;}
+        .btn-group {display:flex; gap:15px; margin-top:30px;}
+        .btn-save, .btn-submit {flex:1; padding:14px; border:none; border-radius:8px; font-size:16px; cursor:pointer;}
+        .btn-save {background:#6c757d; color:white;}
+        .btn-submit {background:#d35400; color:white; font-weight:600;}
+        .spinner {display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 1s linear infinite; margin-right:8px;}
+        @keyframes spin {to {transform:rotate(360deg);}}
     </style>
 </head>
 <body>
@@ -173,21 +100,32 @@
 
         async function loadStock(date) {
             try {
+                console.log("🔍 Fetching stock for date:", date);
+                
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?collection_date=eq.${date}&select=rendang_qty`, {
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
                     }
                 });
+
                 const data = await res.json();
+                console.log("📊 Data from Supabase:", data);
 
                 let sold = 0;
-                data.forEach(row => sold += Number(row.rendang_qty || 0));
+                if (Array.isArray(data)) {
+                    data.forEach(row => {
+                        sold += Number(row.rendang_qty || 0);
+                    });
+                }
 
                 const remaining = Math.max(0, 30 - sold);
+                console.log(`✅ Remaining on ${date}: ${remaining} (sold: ${sold})`);
+
                 return { rendang: remaining };
+
             } catch (e) {
-                console.error(e);
+                console.error("❌ Error loading stock:", e);
                 return { rendang: 30 };
             }
         }
@@ -195,10 +133,14 @@
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
+
             const stock = await loadStock(date);
 
             document.getElementById('availabilityInfo').innerHTML = 
                 `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
+
+            document.getElementById('qty-rendang').max = stock.rendang;
+            document.getElementById('remain-rendang').textContent = `${stock.rendang} left`;
         }
 
         function updateTotal() {
@@ -248,13 +190,13 @@
                 });
 
                 if (res.ok) {
-                    alert("✅ Beef Rendang Order submitted successfully!");
+                    alert("✅ Order submitted successfully!");
                     this.reset();
                     renderDumplings();
                     updateTotal();
                     await updateAvailability();
                 } else {
-                    alert("❌ Failed to submit order");
+                    alert("❌ Failed to submit");
                 }
             } catch (err) {
                 alert("✅ Order saved to database!");
