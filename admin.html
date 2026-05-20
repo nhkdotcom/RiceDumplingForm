@@ -30,7 +30,7 @@
 
     <!-- Rice Dumpling Orders -->
     <div class="section">
-        <h2>🍚 Rice Dumpling Orders (Sorted by Collection Date)</h2>
+        <h2>🍚 Rice Dumpling Orders (Sorted by Collection Date - Newest First)</h2>
         <table id="riceTable">
             <thead>
                 <tr>
@@ -51,7 +51,7 @@
 
     <!-- Beef Rendang Orders -->
     <div class="section">
-        <h2>🥩 Beef Rendang Orders (Sorted by Collection Date)</h2>
+        <h2>🥩 Beef Rendang Orders (Sorted by Collection Date - Newest First)</h2>
         <table id="rendangTable">
             <thead>
                 <tr>
@@ -73,7 +73,7 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         async function loadAllOrders() {
-            // Rice Dumpling Orders
+            // === Rice Dumpling Orders ===
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
                     headers: {
@@ -86,8 +86,8 @@
                 // Sort by collection_date (newest first)
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
 
-                const tbody = document.querySelector('#riceTable tbody');
-                tbody.innerHTML = '';
+                const riceBody = document.querySelector('#riceTable tbody');
+                riceBody.innerHTML = '';
 
                 orders.forEach(o => {
                     const row = document.createElement('tr');
@@ -102,11 +102,11 @@
                         <td><strong>${(o.hokkien_qty || 0) + (o.nyonya_qty || 0)}</strong></td>
                         <td>RM${o.total_price || 0}</td>
                     `;
-                    tbody.appendChild(row);
+                    riceBody.appendChild(row);
                 });
             } catch (e) { console.error(e); }
 
-            // Beef Rendang Orders
+            // === Beef Rendang Orders ===
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders`, {
                     headers: {
@@ -119,8 +119,8 @@
                 // Sort by collection_date (newest first)
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
 
-                const tbody = document.querySelector('#rendangTable tbody');
-                tbody.innerHTML = '';
+                const rendangBody = document.querySelector('#rendangTable tbody');
+                rendangBody.innerHTML = '';
 
                 orders.forEach(o => {
                     const row = document.createElement('tr');
@@ -133,7 +133,7 @@
                         <td><strong>${o.rendang_qty || 0}</strong></td>
                         <td>RM${o.total_price || 0}</td>
                     `;
-                    tbody.appendChild(row);
+                    rendangBody.appendChild(row);
                 });
             } catch (e) { console.error(e); }
         }
