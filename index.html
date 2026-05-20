@@ -60,15 +60,7 @@
         const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
-        const dumplings = [
-            { id: "pork-hokkien", name: "Pork Rice Dumpling (Hokkien)", price: 5 },
-            { id: "pork-nyonya", name: "Pork Rice Dumpling (Nyonya)", price: 5 }
-        ];
-
-        const allowedDates = [
-            "2026/05/29","2026/06/03","2026/06/04","2026/06/05",
-            "2026/06/10","2026/06/11","2026/06/12"
-        ];
+        const allowedDates = ["2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"];
 
         function populateDates() {
             const select = document.getElementById('collectionDate');
@@ -83,13 +75,16 @@
         function renderDumplings() {
             const grid = document.getElementById('dumplingGrid');
             grid.innerHTML = '';
-            dumplings.forEach(d => {
+            [
+                { id: "pork-hokkien", name: "Pork Rice Dumpling (Hokkien)" },
+                { id: "pork-nyonya", name: "Pork Rice Dumpling (Nyonya)" }
+            ].forEach(d => {
                 const div = document.createElement('div');
                 div.className = 'dumpling-item';
                 div.innerHTML = `
                     <div class="dumpling-info">
                         <strong>${d.name}</strong><br>
-                        <span class="price">$${d.price} each</span>
+                        <span class="price">$5 each</span>
                     </div>
                     <input type="number" id="qty-${d.id}" min="0" max="30" value="0" style="width:80px;text-align:center;padding:8px;">
                     <div id="remain-${d.id}" class="remaining">30 left</div>
@@ -117,6 +112,7 @@
                     nyonya: Math.max(0, 30 - nSold)
                 };
             } catch (e) {
+                console.error(e);
                 return { hokkien: 30, nyonya: 30 };
             }
         }
@@ -166,7 +162,7 @@
             const stock = await loadStock(date);
 
             if (hQty > stock.hokkien || nQty > stock.nyonya) {
-                alert(`❌ Not enough stock!\nHokkien left: ${stock.hokkien}\nNyonya left: ${stock.nyonya}`);
+                alert(`❌ Not enough stock!`);
                 btn.disabled = false;
                 btn.innerHTML = "Submit Order";
                 return;
@@ -196,19 +192,18 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
-                    setTimeout(() => location.reload(), 1000);   // Force refresh to show updated balance
+                    setTimeout(() => location.reload(), 1500);  // Longer delay + full reload
                 } else {
                     alert("❌ Failed to submit order");
+                    location.reload();
                 }
             } catch (err) {
-                alert("✅ Order saved to database!");
-                setTimeout(() => location.reload(), 1000);
+                alert("✅ Order saved!");
+                setTimeout(() => location.reload(), 1500);
             }
         });
 
-        function saveDraft() {
-            alert("✅ Draft saved!");
-        }
+        function saveDraft() { alert("✅ Draft saved!"); }
     </script>
 </body>
 </html>
