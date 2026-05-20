@@ -5,24 +5,97 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rice Dumpling Order Form</title>
     <style>
-        body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f0f4f8, #e6f0fa); margin:0; padding:20px; display:flex; justify-content:center; min-height:100vh;}
-        .form-container {background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:520px; overflow:hidden;}
-        .header {background:#334d8f; color:white; padding:20px; text-align:center; font-size:24px; font-weight:600;}
-        .form-body {padding:30px;}
-        label {display:block; margin-bottom:8px; font-weight:600; color:#333;}
-        input, select {width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; margin-bottom:20px;}
-        .dumpling-grid {display:grid; grid-template-columns:1fr; gap:15px; margin:20px 0;}
-        .dumpling-item {display:flex; align-items:center; gap:12px; border:1px solid #eee; padding:12px; border-radius:12px; background:#fafafa;}
-        .dumpling-info {flex:1;}
-        .price {color:#28a745; font-weight:600;}
-        .remaining {font-size:13px; color:#28a745;}
-        .total-items {font-size:15px; font-weight:600; color:#334d8f; text-align:center; margin:15px 0;}
-        .btn-group {display:flex; gap:15px; margin-top:30px;}
-        .btn-save, .btn-submit {flex:1; padding:14px; border:none; border-radius:8px; font-size:16px; cursor:pointer;}
-        .btn-save {background:#6c757d; color:white;}
-        .btn-submit {background:#28a745; color:white; font-weight:600;}
-        .spinner {display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 1s linear infinite; margin-right:8px;}
-        @keyframes spin {to {transform:rotate(360deg);}}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #e6f0fa);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .form-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 520px;
+            overflow: hidden;
+        }
+        .header {
+            background: #334d8f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .form-body { padding: 30px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .dumpling-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .dumpling-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid #eee;
+            padding: 12px;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+        .dumpling-info { flex: 1; }
+        .price { color: #28a745; font-weight: 600; }
+        .remaining { font-size: 13px; color: #28a745; }
+        .total-items {
+            font-size: 15px;
+            font-weight: 600;
+            color: #334d8f;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .btn-save, .btn-submit {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-save { background: #6c757d; color: white; }
+        .btn-submit { background: #28a745; color: white; font-weight: 600; }
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -41,12 +114,7 @@
                 <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5;"></div>
 
                 <label>Collection Point <span style="color:red;">*</span></label>
-                <select id="collectionPoint" required>
-                    <option value="">Select point</option>
-                    <option value="Office">Office (MRT)</option>
-                    <option value="Home">Home Delivery</option>
-                    <option value="Store">Store Pickup</option>
-                </select>
+                <input type="text" id="collectionPoint" value="Office" required>
 
                 <label>Select Dumplings (Max 30 per type per day)</label>
                 <div class="dumpling-grid" id="dumplingGrid"></div>
@@ -194,10 +262,10 @@
                     updateTotal();
                     await updateAvailability();
                 } else {
-                    alert("❌ Failed to submit order. Please check all fields.");
+                    alert("❌ Failed to submit order");
                 }
             } catch (err) {
-                alert("❌ Connection error. Please try again.");
+                alert("❌ Connection error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
