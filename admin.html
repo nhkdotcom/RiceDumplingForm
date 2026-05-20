@@ -6,62 +6,86 @@
     <title>Admin - All Orders</title>
     <style>
         body {font-family: 'Segoe UI', sans-serif; margin:20px; background:#f8f9fa;}
-        h1 {text-align:center; color:#333; margin-bottom:5px;}
-        h2 {color:#334d8f; margin-top:30px; border-bottom:2px solid #334d8f; padding-bottom:8px;}
-        table {width:100%; border-collapse:collapse; margin-top:10px; background:white;}
+        h1 {text-align:center; color:#333;}
+        h2 {color:#334d8f; margin:30px 0 10px;}
+        table {width:100%; border-collapse:collapse; margin:15px 0; background:white;}
         th, td {padding:12px; border:1px solid #ddd; text-align:left;}
         th {background:#334d8f; color:white;}
         .rendang th {background:#d35400;}
+        .summary {background:#e8f5e9;}
+        .summary th {background:#28a745;}
         .refresh-btn {
-            padding:12px 20px; 
-            background:#28a745; 
-            color:white; 
-            border:none; 
-            border-radius:8px; 
-            cursor:pointer; 
-            font-size:16px;
+            padding:12px 20px; background:#28a745; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;
         }
-        .section {margin-bottom:40px;}
+        .section {margin-bottom:50px;}
     </style>
 </head>
 <body>
     <h1>📋 Admin Panel - All Orders</h1>
-    <button class="refresh-btn" onclick="loadAllOrders()">🔄 Refresh All Orders</button>
+    <button class="refresh-btn" onclick="loadAllOrders()">🔄 Refresh All Data</button>
 
-    <!-- Rice Dumpling Orders -->
+    <!-- Rice Dumpling Summary -->
     <div class="section">
-        <h2>🍚 Rice Dumpling Orders (Sorted by Collection Date - Newest First)</h2>
-        <table id="riceTable">
+        <h2>🍚 Rice Dumpling Summary (by Collection Date)</h2>
+        <table id="riceSummary">
             <thead>
                 <tr>
                     <th>Collection Date</th>
-                    <th>Order Time</th>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Collection Point</th>
-                    <th>Hokkien</th>
-                    <th>Nyonya</th>
-                    <th>Total Qty</th>
-                    <th>Total (RM)</th>
+                    <th>Hokkien Total</th>
+                    <th>Nyonya Total</th>
+                    <th>Grand Total Dumplings</th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
 
-    <!-- Beef Rendang Orders -->
+    <!-- Beef Rendang Summary -->
     <div class="section">
-        <h2>🥩 Beef Rendang Orders (Sorted by Collection Date - Newest First)</h2>
-        <table id="rendangTable">
+        <h2>🥩 Beef Rendang Summary (by Collection Date)</h2>
+        <table id="rendangSummary">
+            <thead>
+                <tr>
+                    <th>Collection Date</th>
+                    <th>Total Dumplings</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Detailed Rice Orders -->
+    <div class="section">
+        <h2>🍚 Detailed Rice Dumpling Orders</h2>
+        <table id="riceDetail">
             <thead>
                 <tr>
                     <th>Collection Date</th>
                     <th>Order Time</th>
                     <th>Name</th>
                     <th>Phone</th>
-                    <th>Collection Point</th>
+                    <th>Point</th>
+                    <th>Hokkien</th>
+                    <th>Nyonya</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Detailed Rendang Orders -->
+    <div class="section">
+        <h2>🥩 Detailed Beef Rendang Orders</h2>
+        <table id="rendangDetail">
+            <thead>
+                <tr>
+                    <th>Collection Date</th>
+                    <th>Order Time</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Point</th>
                     <th>Quantity</th>
-                    <th>Total (RM)</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -73,22 +97,42 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         async function loadAllOrders() {
-            // === Rice Dumpling Orders ===
+            // Rice Dumpling Orders
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
                 let orders = await res.json();
 
-                // Sort by collection_date (newest first)
+                // Group by collection date for summary
+                const summary = {};
+                orders.forEach(o => {
+                    const date = o.collection_date;
+                    if (!summary[date]) summary[date] = { hokkien: 0, nyonya: 0 };
+                    summary[date].hokkien += Number(o.hokkien_qty || 0);
+                    summary[date].nyonya += Number(o.nyonya_qty || 0);
+                });
+
+                // Render Summary
+                const sumBody = document.querySelector('#riceSummary tbody');
+                sumBody.innerHTML = '';
+                Object.keys(summary).sort().reverse().forEach(date => {
+                    const s = summary[date];
+                    const row = document.createElement('tr');
+                    row.className = 'summary';
+                    row.innerHTML = `
+                        <td><strong>${date}</strong></td>
+                        <td>${s.hokkien}</td>
+                        <td>${s.nyonya}</td>
+                        <td><strong>${s.hokkien + s.nyonya}</strong></td>
+                    `;
+                    sumBody.appendChild(row);
+                });
+
+                // Render Detailed Rice Orders
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
-
-                const riceBody = document.querySelector('#riceTable tbody');
-                riceBody.innerHTML = '';
-
+                const detailBody = document.querySelector('#riceDetail tbody');
+                detailBody.innerHTML = '';
                 orders.forEach(o => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -100,28 +144,42 @@
                         <td>${o.hokkien_qty || 0}</td>
                         <td>${o.nyonya_qty || 0}</td>
                         <td><strong>${(o.hokkien_qty || 0) + (o.nyonya_qty || 0)}</strong></td>
-                        <td>RM${o.total_price || 0}</td>
                     `;
-                    riceBody.appendChild(row);
+                    detailBody.appendChild(row);
                 });
             } catch (e) { console.error(e); }
 
-            // === Beef Rendang Orders ===
+            // Beef Rendang Summary + Detail
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
                 let orders = await res.json();
 
-                // Sort by collection_date (newest first)
+                const summary = {};
+                orders.forEach(o => {
+                    const date = o.collection_date;
+                    if (!summary[date]) summary[date] = 0;
+                    summary[date] += Number(o.rendang_qty || 0);
+                });
+
+                // Render Rendang Summary
+                const sumBody = document.querySelector('#rendangSummary tbody');
+                sumBody.innerHTML = '';
+                Object.keys(summary).sort().reverse().forEach(date => {
+                    const row = document.createElement('tr');
+                    row.className = 'summary';
+                    row.innerHTML = `
+                        <td><strong>${date}</strong></td>
+                        <td><strong>${summary[date]}</strong></td>
+                    `;
+                    sumBody.appendChild(row);
+                });
+
+                // Render Detailed Rendang Orders
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
-
-                const rendangBody = document.querySelector('#rendangTable tbody');
-                rendangBody.innerHTML = '';
-
+                const detailBody = document.querySelector('#rendangDetail tbody');
+                detailBody.innerHTML = '';
                 orders.forEach(o => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -131,9 +189,8 @@
                         <td>${o.phone || ''}</td>
                         <td>${o.collection_point || ''}</td>
                         <td><strong>${o.rendang_qty || 0}</strong></td>
-                        <td>RM${o.total_price || 0}</td>
                     `;
-                    rendangBody.appendChild(row);
+                    detailBody.appendChild(row);
                 });
             } catch (e) { console.error(e); }
         }
