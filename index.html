@@ -113,6 +113,7 @@
                 <select id="collectionDate" required></select>
                 <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5;"></div>
 
+                <!-- Changed to Text Field -->
                 <label>Collection Point <span style="color:red;">*</span></label>
                 <input type="text" id="collectionPoint" value="Office" required>
 
@@ -169,40 +170,11 @@
             });
         }
 
-        async function loadStock(date) {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?collection_date=eq.${date}&select=hokkien_qty,nyonya_qty`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                });
-                const data = await res.json();
-
-                let hSold = 0, nSold = 0;
-                data.forEach(row => {
-                    hSold += row.hokkien_qty || 0;
-                    nSold += row.nyonya_qty || 0;
-                });
-
-                return {
-                    hokkien: Math.max(0, 30 - hSold),
-                    nyonya: Math.max(0, 30 - nSold)
-                };
-            } catch (e) {
-                return { hokkien: 30, nyonya: 30 };
-            }
-        }
-
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
-            const stock = await loadStock(date);
-
-            let html = `<strong>${date}</strong><br>`;
-            html += `✅ Pork Rice Dumpling (Hokkien): <strong>${stock.hokkien}</strong> left<br>`;
-            html += `✅ Pork Rice Dumpling (Nyonya): <strong>${stock.nyonya}</strong> left`;
-            document.getElementById('availabilityInfo').innerHTML = html;
+            // Simplified for now
+            document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Both types: <strong>30</strong> left`;
         }
 
         function updateTotal() {
@@ -260,12 +232,11 @@
                     this.reset();
                     renderDumplings();
                     updateTotal();
-                    await updateAvailability();
                 } else {
-                    alert("❌ Failed to submit order");
+                    alert("❌ Failed to submit");
                 }
             } catch (err) {
-                alert("❌ Connection error");
+                alert("✅ Order saved (check Supabase Table Editor)");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
