@@ -43,7 +43,7 @@
                 <label>Collection Point <span style="color:red;">*</span></label>
                 <input type="text" id="collectionPoint" value="Office" required>
 
-                <label>Select Dumplings (Max 30 per day)</label>
+                <label>Select Dumplings</label>
                 <div class="dumpling-grid" id="dumplingGrid"></div>
 
                 <div class="total-items">Total items: <span id="totalCount">0</span></div>
@@ -88,10 +88,7 @@
         async function loadStock(date) {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?collection_date=eq.${date}&select=rendang_qty`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
                 const data = await res.json();
                 let sold = 0;
@@ -125,7 +122,6 @@
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            const original = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<span class="spinner"></span> Submitting...`;
 
@@ -155,24 +151,13 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
-
-                    // WhatsApp Message to your Business Account
-                    const message = `I just put in the order for ${qty} Beef Rendang dumplings. Please check.`;
-                    window.open(`https://wa.me/6589877278?text=${encodeURIComponent(message)}`, '_blank');  
-                    // ← CHANGE 60123456789 to your WhatsApp Business number
-
-                    this.reset();
-                    renderDumplings();
-                    setTimeout(() => location.reload(), 1000);   // Refresh to show updated stock
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     alert("❌ Failed to submit order");
                 }
             } catch (err) {
                 alert("✅ Order saved to database!");
                 setTimeout(() => location.reload(), 1000);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = original;
             }
         });
 
