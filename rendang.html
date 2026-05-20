@@ -32,10 +32,8 @@
             <form id="orderForm">
                 <label>Name <span style="color:red;">*</span></label>
                 <input type="text" id="name" required>
-
                 <label>Phone Number <span style="color:red;">*</span></label>
                 <input type="tel" id="phone" required>
-
                 <label>Collection Date <span style="color:red;">*</span></label>
                 <select id="collectionDate" required></select>
                 <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5;"></div>
@@ -60,8 +58,6 @@
         const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
-        const dumplings = [{ id: "rendang", name: "Beef Rendang Rice Dumpling", price: 7 }];
-
         const allowedDates = ["2026/06/24", "2026/06/25", "2026/06/26", "2026/07/01", "2026/07/02"];
 
         function populateDates() {
@@ -69,33 +65,30 @@
             select.innerHTML = '<option value="">Select collection date</option>';
             allowedDates.forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d; opt.textContent = d;
-                select.appendChild(opt);
+                opt.value = d; opt.textContent = d; select.appendChild(opt);
             });
         }
 
         function renderDumplings() {
             const grid = document.getElementById('dumplingGrid');
-            grid.innerHTML = '';
-            dumplings.forEach(d => {
-                const div = document.createElement('div');
-                div.className = 'dumpling-item';
-                div.innerHTML = `
+            grid.innerHTML = `
+                <div class="dumpling-item">
                     <div class="dumpling-info">
-                        <strong>${d.name}</strong><br>
-                        <span class="price">$${d.price} each</span>
+                        <strong>Beef Rendang Rice Dumpling</strong><br>
+                        <span class="price">$7 each</span>
                     </div>
-                    <input type="number" id="qty-${d.id}" min="0" max="30" value="0" style="width:80px;text-align:center;padding:8px;">
-                    <div id="remain-${d.id}" class="remaining">30 left</div>
-                `;
-                grid.appendChild(div);
-            });
+                    <input type="number" id="qty-rendang" min="0" max="30" value="0" style="width:80px;text-align:center;padding:8px;">
+                    <div id="remain-rendang" class="remaining">30 left</div>
+                </div>`;
         }
 
         async function loadStock(date) {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?collection_date=eq.${date}&select=rendang_qty`, {
-                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
                 });
                 const data = await res.json();
                 let sold = 0;
@@ -115,36 +108,32 @@
             document.getElementById('remain-rendang').textContent = `${remaining} left`;
         }
 
-        function updateTotal() {
-            const total = parseInt(document.getElementById('qty-rendang').value) || 0;
-            document.getElementById('totalCount').textContent = total;
-        }
-
         window.onload = () => {
             populateDates();
             renderDumplings();
             document.getElementById('collectionDate').addEventListener('change', updateAvailability);
-            document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
+            document.getElementById('qty-rendang').addEventListener('input', () => {
+                document.getElementById('totalCount').textContent = document.getElementById('qty-rendang').value || 0;
+            });
             document.getElementById('collectionDate').value = "2026/06/24";
             updateAvailability();
         };
 
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span> Submitting...`;
 
             const date = document.getElementById('collectionDate').value;
             const qty = parseInt(document.getElementById('qty-rendang').value) || 0;
-            const remaining = await loadStock(date);
 
-            if (qty > remaining) {
-                alert(`❌ Only ${remaining} left! You cannot order ${qty}.`);
+            if (qty <= 0) {
+                alert("Please enter quantity");
+                btn.disabled = false;
+                btn.innerHTML = "Submit Order";
                 return;
             }
-
-            const btn = document.getElementById('submitBtn');
-            const original = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner"></span> Submitting...`;
 
             const formData = {
                 name: document.getElementById('name').value,
@@ -169,16 +158,13 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
-                    setTimeout(() => location.reload(), 800);   // Refresh page to show updated stock
+                    setTimeout(() => location.reload(), 1000);  // Force refresh to show new balance
                 } else {
-                    alert("❌ Failed to submit order");
+                    alert("❌ Failed to submit");
                 }
             } catch (err) {
-                alert("✅ Order saved to database!");
-                setTimeout(() => location.reload(), 800);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = original;
+                alert("✅ Order saved!");
+                setTimeout(() => location.reload(), 1000);
             }
         });
 
