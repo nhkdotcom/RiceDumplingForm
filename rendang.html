@@ -171,9 +171,16 @@
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
 
-                    // Send WhatsApp Notification
-                    const message = `New Beef Rendang Order!%0A%0AName: ${document.getElementById('name').value}%0APhone: ${document.getElementById('phone').value}%0ADate: ${date}%0AQty: ${qty}%0ATotal: RM${qty * 7}`;
-                    window.open(`https://wa.me/6589877278?text=${message}`, '_blank');   // ← CHANGE THIS NUMBER
+                    // === WhatsApp Notification ===
+                    const message = `New Beef Rendang Order!%0A%0A` +
+                                    `Name: ${document.getElementById('name').value}%0A` +
+                                    `Phone: ${document.getElementById('phone').value}%0A` +
+                                    `Date: ${date}%0A` +
+                                    `Quantity: ${qty} pcs%0A` +
+                                    `Total: RM${qty * 7}`;
+
+                    window.open(`https://wa.me/6589877278?text=${message}`, '_blank');  
+                    // ↑↑↑ CHANGE THIS NUMBER to your WhatsApp number
 
                     this.reset();
                     renderDumplings();
