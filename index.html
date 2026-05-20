@@ -75,8 +75,7 @@
             select.innerHTML = '<option value="">Select collection date</option>';
             allowedDates.forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d;
-                opt.textContent = d;
+                opt.value = d; opt.textContent = d;
                 select.appendChild(opt);
             });
         }
@@ -143,7 +142,6 @@
             total += parseInt(document.getElementById('qty-pork-hokkien').value) || 0;
             total += parseInt(document.getElementById('qty-pork-nyonya').value) || 0;
             document.getElementById('totalCount').textContent = total;
-            return total;
         }
 
         window.onload = () => {
@@ -158,13 +156,21 @@
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            const original = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<span class="spinner"></span> Submitting...`;
 
             const date = document.getElementById('collectionDate').value;
             const hQty = parseInt(document.getElementById('qty-pork-hokkien').value) || 0;
             const nQty = parseInt(document.getElementById('qty-pork-nyonya').value) || 0;
+
+            const stock = await loadStock(date);
+
+            if (hQty > stock.hokkien || nQty > stock.nyonya) {
+                alert(`❌ Not enough stock!\nHokkien left: ${stock.hokkien}\nNyonya left: ${stock.nyonya}`);
+                btn.disabled = false;
+                btn.innerHTML = "Submit Order";
+                return;
+            }
 
             const formData = {
                 name: document.getElementById('name').value,
@@ -190,18 +196,13 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
-                    this.reset();
-                    renderDumplings();
-                    updateTotal();
-                    await updateAvailability();   // ← Refresh stock immediately
+                    setTimeout(() => location.reload(), 1000);   // Force refresh to show updated balance
                 } else {
                     alert("❌ Failed to submit order");
                 }
             } catch (err) {
                 alert("✅ Order saved to database!");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = original;
+                setTimeout(() => location.reload(), 1000);
             }
         });
 
