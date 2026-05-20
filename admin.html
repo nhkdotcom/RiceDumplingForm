@@ -6,24 +6,29 @@
     <title>Admin - All Orders</title>
     <style>
         body {font-family: 'Segoe UI', sans-serif; margin:20px; background:#f8f9fa;}
-        table {width:100%; border-collapse:collapse; margin-top:20px;}
+        h1 {text-align:center; color:#333;}
+        table {width:100%; border-collapse:collapse; margin-top:20px; background:white;}
         th, td {padding:12px; border:1px solid #ddd; text-align:left;}
-        th {background:#d35400; color:white;}
-        .header {background:#d35400; color:white; padding:15px; text-align:center; font-size:22px;}
+        th {background:#334d8f; color:white;}
+        .rendang {background:#fff3e0;}
+        .refresh-btn {padding:10px 20px; background:#28a745; color:white; border:none; border-radius:8px; cursor:pointer; margin:10px 0;}
     </style>
 </head>
 <body>
-    <div class="header">All Orders - Admin Panel</div>
+    <h1>📋 All Orders - Admin Panel</h1>
+    <button class="refresh-btn" onclick="loadAllOrders()">🔄 Refresh Orders</button>
+    
     <table id="ordersTable">
         <thead>
             <tr>
-                <th>Date</th>
+                <th>Order Time</th>
                 <th>Name</th>
                 <th>Phone</th>
                 <th>Collection Date</th>
-                <th>Point</th>
-                <th>Rendang Qty</th>
-                <th>Total</th>
+                <th>Collection Point</th>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Total (RM)</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -34,32 +39,78 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         async function loadAllOrders() {
+            const tbody = document.querySelector('#ordersTable tbody');
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading orders...</td></tr>';
+
+            let allOrders = [];
+
+            // Load Rice Dumpling Orders
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?order=created_at.desc`, {
+                const res1 = await fetch(`${SUPABASE_URL}/rest/v1/orders?order=created_at.desc`, {
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
                     }
                 });
-                const orders = await res.json();
-                const tbody = document.querySelector('#ordersTable tbody');
-                tbody.innerHTML = '';
-
-                orders.forEach(order => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${new Date(order.created_at).toLocaleString()}</td>
-                        <td>${order.name}</td>
-                        <td>${order.phone}</td>
-                        <td>${order.collection_date}</td>
-                        <td>${order.collection_point}</td>
-                        <td>${order.rendang_qty}</td>
-                        <td>$${order.total_price}</td>
-                    `;
-                    tbody.appendChild(row);
+                const riceOrders = await res1.json();
+                riceOrders.forEach(o => {
+                    allOrders.push({
+                        time: o.created_at,
+                        name: o.name,
+                        phone: o.phone,
+                        date: o.collection_date,
+                        point: o.collection_point,
+                        item: `Rice Dumpling (H:${o.hokkien_qty || 0} | N:${o.nyonya_qty || 0})`,
+                        qty: (o.hokkien_qty || 0) + (o.nyonya_qty || 0),
+                        total: o.total_price || 0
+                    });
                 });
-            } catch (e) {
-                console.error(e);
+            } catch (e) { console.error("Rice orders error", e); }
+
+            // Load Beef Rendang Orders
+            try {
+                const res2 = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const rendangOrders = await res2.json();
+                rendangOrders.forEach(o => {
+                    allOrders.push({
+                        time: o.created_at,
+                        name: o.name,
+                        phone: o.phone,
+                        date: o.collection_date,
+                        point: o.collection_point,
+                        item: "Beef Rendang",
+                        qty: o.rendang_qty || 0,
+                        total: o.total_price || 0
+                    });
+                });
+            } catch (e) { console.error("Rendang orders error", e); }
+
+            // Sort by time (newest first)
+            allOrders.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            tbody.innerHTML = '';
+            allOrders.forEach(order => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(order.time).toLocaleString()}</td>
+                    <td>${order.name}</td>
+                    <td>${order.phone}</td>
+                    <td>${order.date}</td>
+                    <td>${order.point}</td>
+                    <td>${order.item}</td>
+                    <td><strong>${order.qty}</strong></td>
+                    <td>RM${order.total}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (allOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#666;">No orders yet</td></tr>';
             }
         }
 
