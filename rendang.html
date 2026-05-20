@@ -60,22 +60,16 @@
         const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
-        const dumplings = [
-            { id: "rendang", name: "Beef Rendang Rice Dumpling", price: 7 }
-        ];
+        const dumplings = [{ id: "rendang", name: "Beef Rendang Rice Dumpling", price: 7 }];
 
-        const allowedDates = [
-            "2026/06/24", "2026/06/25", "2026/06/26",
-            "2026/07/01", "2026/07/02"
-        ];
+        const allowedDates = ["2026/06/24", "2026/06/25", "2026/06/26", "2026/07/01", "2026/07/02"];
 
         function populateDates() {
             const select = document.getElementById('collectionDate');
             select.innerHTML = '<option value="">Select collection date</option>';
             allowedDates.forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d;
-                opt.textContent = d;
+                opt.value = d; opt.textContent = d;
                 select.appendChild(opt);
             });
         }
@@ -101,33 +95,29 @@
         async function loadStock(date) {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?collection_date=eq.${date}&select=rendang_qty`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
                 const data = await res.json();
                 let sold = 0;
                 data.forEach(row => sold += Number(row.rendang_qty || 0));
-                return { rendang: Math.max(0, 30 - sold) };
+                return Math.max(0, 30 - sold);
             } catch (e) {
-                return { rendang: 30 };
+                return 30;
             }
         }
 
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
-            const stock = await loadStock(date);
-            document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
-            document.getElementById('qty-rendang').max = stock.rendang;
-            document.getElementById('remain-rendang').textContent = `${stock.rendang} left`;
+            const remaining = await loadStock(date);
+            document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${remaining}</strong> left`;
+            document.getElementById('qty-rendang').max = remaining;
+            document.getElementById('remain-rendang').textContent = `${remaining} left`;
         }
 
         function updateTotal() {
-            let total = parseInt(document.getElementById('qty-rendang').value) || 0;
+            const total = parseInt(document.getElementById('qty-rendang').value) || 0;
             document.getElementById('totalCount').textContent = total;
-            return total;
         }
 
         window.onload = () => {
@@ -141,13 +131,20 @@
 
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            const date = document.getElementById('collectionDate').value;
+            const qty = parseInt(document.getElementById('qty-rendang').value) || 0;
+            const remaining = await loadStock(date);
+
+            if (qty > remaining) {
+                alert(`❌ Only ${remaining} left! You cannot order ${qty}.`);
+                return;
+            }
+
             const btn = document.getElementById('submitBtn');
             const original = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<span class="spinner"></span> Submitting...`;
-
-            const date = document.getElementById('collectionDate').value;
-            const qty = parseInt(document.getElementById('qty-rendang').value) || 0;
 
             const formData = {
                 name: document.getElementById('name').value,
@@ -172,24 +169,20 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
-                    this.reset();
-                    renderDumplings();
-                    updateTotal();
-                    await updateAvailability();   // ← Updated stock immediately
+                    setTimeout(() => location.reload(), 800);   // Refresh page to show updated stock
                 } else {
                     alert("❌ Failed to submit order");
                 }
             } catch (err) {
                 alert("✅ Order saved to database!");
+                setTimeout(() => location.reload(), 800);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
             }
         });
 
-        function saveDraft() {
-            alert("✅ Draft saved!");
-        }
+        function saveDraft() { alert("✅ Draft saved!"); }
     </script>
 </body>
 </html>
