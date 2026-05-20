@@ -135,7 +135,7 @@
     </div>
 
     <script>
-        // === YOUR SUPABASE CREDENTIALS ===
+        // Supabase Config
         const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
@@ -147,33 +147,6 @@
         const allowedDates = ["2026/05/25","2026/05/26","2026/05/27","2026/05/28","2026/05/29","2026/05/30","2026/06/01","2026/06/02","2026/06/03"];
 
         let dailyStock = {};
-
-        async function loadStock(date) {
-            try {
-                const { data, error } = await fetch(`${SUPABASE_URL}/rest/v1/orders?collection_date=eq.${date}&select=hokkien_qty,nyonya_qty`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                }).then(res => res.json());
-
-                let hSold = 0, nSold = 0;
-                if (Array.isArray(data)) {
-                    data.forEach(row => {
-                        hSold += row.hokkien_qty || 0;
-                        nSold += row.nyonya_qty || 0;
-                    });
-                }
-
-                return {
-                    hokkien: Math.max(0, 30 - hSold),
-                    nyonya: Math.max(0, 30 - nSold)
-                };
-            } catch (e) {
-                console.error(e);
-                return { hokkien: 30, nyonya: 30 };
-            }
-        }
 
         function populateDates() {
             const select = document.getElementById('collectionDate');
@@ -204,6 +177,32 @@
             });
         }
 
+        async function loadStock(date) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?collection_date=eq.${date}&select=hokkien_qty,nyonya_qty`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const data = await res.json();
+
+                let hSold = 0, nSold = 0;
+                data.forEach(row => {
+                    hSold += row.hokkien_qty || 0;
+                    nSold += row.nyonya_qty || 0;
+                });
+
+                return {
+                    hokkien: Math.max(0, 30 - hSold),
+                    nyonya: Math.max(0, 30 - nSold)
+                };
+            } catch (e) {
+                console.error(e);
+                return { hokkien: 30, nyonya: 30 };
+            }
+        }
+
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
@@ -218,6 +217,8 @@
 
             document.getElementById('qty-pork-hokkien').max = stock.hokkien;
             document.getElementById('qty-pork-nyonya').max = stock.nyonya;
+            document.getElementById('remain-pork-hokkien').textContent = `${stock.hokkien} left`;
+            document.getElementById('remain-pork-nyonya').textContent = `${stock.nyonya} left`;
         }
 
         function updateTotal() {
@@ -237,7 +238,6 @@
             updateAvailability();
         };
 
-        // Submit Form
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -279,11 +279,10 @@
                     updateTotal();
                     await updateAvailability();
                 } else {
-                    alert("❌ Failed to submit order");
+                    alert("❌ Failed to submit. Please try again.");
                 }
             } catch (err) {
-                alert("❌ Connection error");
-                console.error(err);
+                alert("❌ Connection error. Please check your internet.");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
