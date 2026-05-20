@@ -120,6 +120,8 @@
             if (!date) return;
             const stock = await loadStock(date);
             document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
+            document.getElementById('qty-rendang').max = stock.rendang;
+            document.getElementById('remain-rendang').textContent = `${stock.rendang} left`;
         }
 
         function updateTotal() {
@@ -170,22 +172,10 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
-
-                    // === WhatsApp Notification ===
-                    const message = `New Beef Rendang Order!%0A%0A` +
-                                    `Name: ${document.getElementById('name').value}%0A` +
-                                    `Phone: ${document.getElementById('phone').value}%0A` +
-                                    `Date: ${date}%0A` +
-                                    `Quantity: ${qty} pcs%0A` +
-                                    `Total: RM${qty * 7}`;
-
-                    window.open(`https://wa.me/6589877278?text=${message}`, '_blank');  
-                    // ↑↑↑ CHANGE THIS NUMBER to your WhatsApp number
-
                     this.reset();
                     renderDumplings();
                     updateTotal();
-                    await updateAvailability();
+                    await updateAvailability();   // ← Updated stock immediately
                 } else {
                     alert("❌ Failed to submit order");
                 }
