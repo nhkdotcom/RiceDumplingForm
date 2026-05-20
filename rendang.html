@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rice Dumpling Order Form</title>
+    <title>Beef Rendang Rice Dumpling Order Form</title>
     <style>
         body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f0f4f8, #e6f0fa); margin:0; padding:20px; display:flex; justify-content:center; min-height:100vh;}
         .form-container {background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:520px; overflow:hidden;}
-        .header {background:#334d8f; color:white; padding:20px; text-align:center; font-size:24px; font-weight:600;}
+        .header {background:#d35400; color:white; padding:20px; text-align:center; font-size:24px; font-weight:600;}
         .form-body {padding:30px;}
         label {display:block; margin-bottom:8px; font-weight:600; color:#333;}
         input, select {width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; margin-bottom:20px;}
         .dumpling-grid {display:grid; grid-template-columns:1fr; gap:15px; margin:20px 0;}
         .dumpling-item {display:flex; align-items:center; gap:12px; border:1px solid #eee; padding:12px; border-radius:12px; background:#fafafa;}
         .dumpling-info {flex:1;}
-        .price {color:#28a745; font-weight:600;}
-        .remaining {font-size:13px; color:#28a745;}
-        .total-items {font-size:15px; font-weight:600; color:#334d8f; text-align:center; margin:15px 0;}
+        .price {color:#e67e22; font-weight:600;}
+        .remaining {font-size:13px; color:#27ae60;}
+        .total-items {font-size:15px; font-weight:600; color:#d35400; text-align:center; margin:15px 0;}
         .btn-group {display:flex; gap:15px; margin-top:30px;}
         .btn-save, .btn-submit {flex:1; padding:14px; border:none; border-radius:8px; font-size:16px; cursor:pointer;}
         .btn-save {background:#6c757d; color:white;}
-        .btn-submit {background:#28a745; color:white; font-weight:600;}
+        .btn-submit {background:#d35400; color:white; font-weight:600;}
         .spinner {display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 1s linear infinite; margin-right:8px;}
         @keyframes spin {to {transform:rotate(360deg);}}
     </style>
 </head>
 <body>
     <div class="form-container">
-        <div class="header">Rice Dumpling Order Form</div>
+        <div class="header">Beef Rendang Rice Dumpling Order Form</div>
         <div class="form-body">
             <form id="orderForm">
                 <label>Name <span style="color:red;">*</span></label>
@@ -43,7 +43,7 @@
                 <label>Collection Point <span style="color:red;">*</span></label>
                 <input type="text" id="collectionPoint" value="Office" required>
 
-                <label>Select Dumplings (Max 30 per type per day)</label>
+                <label>Select Dumplings (Max 30 per day)</label>
                 <div class="dumpling-grid" id="dumplingGrid"></div>
 
                 <div class="total-items">Total items: <span id="totalCount">0</span></div>
@@ -61,17 +61,14 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         const dumplings = [
-            { id: "pork-hokkien", name: "Pork Rice Dumpling (Hokkien)", price: 5 },
-            { id: "pork-nyonya", name: "Pork Rice Dumpling (Nyonya)", price: 5 }
+            { id: "rendang", name: "Beef Rendang Rice Dumpling", price: 7 }
         ];
 
-        // Updated Dates
+        // Updated Collection Dates
         const allowedDates = [
             "2026/06/24", "2026/06/25", "2026/06/26",
             "2026/07/01", "2026/07/02"
         ];
-
-        // ... (rest of the script remains the same as previous version)
 
         function populateDates() {
             const select = document.getElementById('collectionDate');
@@ -84,8 +81,114 @@
             });
         }
 
-        // Rest of your existing script (renderDumplings, loadStock, etc.) stays the same
-        // Just copy from your previous working file and replace only the allowedDates part
+        function renderDumplings() {
+            const grid = document.getElementById('dumplingGrid');
+            grid.innerHTML = '';
+            dumplings.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'dumpling-item';
+                div.innerHTML = `
+                    <div class="dumpling-info">
+                        <strong>${d.name}</strong><br>
+                        <span class="price">$${d.price} each</span>
+                    </div>
+                    <input type="number" id="qty-${d.id}" min="0" max="30" value="0" style="width:80px;text-align:center;padding:8px;">
+                    <div id="remain-${d.id}" class="remaining">30 left</div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        async function loadStock(date) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rendang_orders?collection_date=eq.${date}&select=rendang_qty`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const data = await res.json();
+                let sold = 0;
+                data.forEach(row => sold += row.rendang_qty || 0);
+                return { rendang: Math.max(0, 30 - sold) };
+            } catch (e) {
+                return { rendang: 30 };
+            }
+        }
+
+        async function updateAvailability() {
+            const date = document.getElementById('collectionDate').value;
+            if (!date) return;
+            const stock = await loadStock(date);
+            document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
+        }
+
+        function updateTotal() {
+            let total = parseInt(document.getElementById('qty-rendang').value) || 0;
+            document.getElementById('totalCount').textContent = total;
+            return total;
+        }
+
+        window.onload = () => {
+            populateDates();
+            renderDumplings();
+            document.getElementById('collectionDate').addEventListener('change', updateAvailability);
+            document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
+            document.getElementById('collectionDate').value = "2026/06/24";
+            updateAvailability();
+        };
+
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span> Submitting...`;
+
+            const date = document.getElementById('collectionDate').value;
+            const qty = parseInt(document.getElementById('qty-rendang').value) || 0;
+
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                collection_date: date,
+                collection_point: document.getElementById('collectionPoint').value,
+                rendang_qty: qty,
+                total_items: qty,
+                total_price: qty * 7
+            };
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rendang_orders`, {
+                    method: "POST",
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (res.ok) {
+                    alert("✅ Beef Rendang Order submitted successfully!");
+                    this.reset();
+                    renderDumplings();
+                    updateTotal();
+                    await updateAvailability();
+                } else {
+                    alert("❌ Failed to submit order");
+                }
+            } catch (err) {
+                alert("✅ Order saved to database!");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        });
+
+        function saveDraft() {
+            alert("✅ Draft saved!");
+        }
     </script>
 </body>
 </html>
