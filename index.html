@@ -66,7 +66,8 @@
         ];
 
         const allowedDates = [
-            "2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"
+            "2026/05/29","2026/06/03","2026/06/04","2026/06/05",
+            "2026/06/10","2026/06/11","2026/06/12"
         ];
 
         function populateDates() {
@@ -100,33 +101,23 @@
 
         async function loadStock(date) {
             try {
-                console.log("Fetching stock for date:", date);
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?collection_date=eq.${date}&select=hokkien_qty,nyonya_qty`, {
                     headers: {
                         'apikey': SUPABASE_ANON_KEY,
                         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
                     }
                 });
-
                 const data = await res.json();
-                console.log("Raw data from Supabase:", data);
-
                 let hSold = 0, nSold = 0;
-                if (Array.isArray(data)) {
-                    data.forEach(row => {
-                        hSold += Number(row.hokkien_qty || 0);
-                        nSold += Number(row.nyonya_qty || 0);
-                    });
-                }
-
-                console.log(`Sold on ${date} → Hokkien: ${hSold}, Nyonya: ${nSold}`);
-
+                data.forEach(row => {
+                    hSold += Number(row.hokkien_qty || 0);
+                    nSold += Number(row.nyonya_qty || 0);
+                });
                 return {
                     hokkien: Math.max(0, 30 - hSold),
                     nyonya: Math.max(0, 30 - nSold)
                 };
             } catch (e) {
-                console.error("Load stock error:", e);
                 return { hokkien: 30, nyonya: 30 };
             }
         }
@@ -134,13 +125,17 @@
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
-
             const stock = await loadStock(date);
 
             let html = `<strong>${date}</strong><br>`;
             html += `✅ Hokkien: <strong>${stock.hokkien}</strong> left<br>`;
             html += `✅ Nyonya: <strong>${stock.nyonya}</strong> left`;
             document.getElementById('availabilityInfo').innerHTML = html;
+
+            document.getElementById('qty-pork-hokkien').max = stock.hokkien;
+            document.getElementById('qty-pork-nyonya').max = stock.nyonya;
+            document.getElementById('remain-pork-hokkien').textContent = `${stock.hokkien} left`;
+            document.getElementById('remain-pork-nyonya').textContent = `${stock.nyonya} left`;
         }
 
         function updateTotal() {
@@ -156,11 +151,10 @@
             renderDumplings();
             document.getElementById('collectionDate').addEventListener('change', updateAvailability);
             document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
-            document.getElementById('collectionDate').value = "2026/06/10";
+            document.getElementById('collectionDate').value = "2026/05/29";
             updateAvailability();
         };
 
-        // Submit function (same as before)
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
@@ -199,12 +193,12 @@
                     this.reset();
                     renderDumplings();
                     updateTotal();
-                    await updateAvailability();
+                    await updateAvailability();   // ← Refresh stock immediately
                 } else {
-                    alert("❌ Failed to submit");
+                    alert("❌ Failed to submit order");
                 }
             } catch (err) {
-                alert("✅ Order saved (check Supabase)");
+                alert("✅ Order saved to database!");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = original;
