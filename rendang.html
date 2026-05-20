@@ -38,7 +38,7 @@
 
                 <label>Collection Date <span style="color:red;">*</span></label>
                 <select id="collectionDate" required></select>
-                <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5; font-weight:500;"></div>
+                <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5;"></div>
 
                 <label>Collection Point <span style="color:red;">*</span></label>
                 <input type="text" id="collectionPoint" value="Office" required>
@@ -107,16 +107,10 @@
                     }
                 });
                 const data = await res.json();
-
                 let sold = 0;
-                if (Array.isArray(data)) {
-                    data.forEach(row => sold += Number(row.rendang_qty || 0));
-                }
-
-                const remaining = Math.max(0, 30 - sold);
-                return { rendang: remaining };
+                data.forEach(row => sold += Number(row.rendang_qty || 0));
+                return { rendang: Math.max(0, 30 - sold) };
             } catch (e) {
-                console.error(e);
                 return { rendang: 30 };
             }
         }
@@ -124,11 +118,8 @@
         async function updateAvailability() {
             const date = document.getElementById('collectionDate').value;
             if (!date) return;
-
             const stock = await loadStock(date);
-
-            document.getElementById('availabilityInfo').innerHTML = 
-                `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
+            document.getElementById('availabilityInfo').innerHTML = `<strong>${date}</strong><br>✅ Beef Rendang: <strong>${stock.rendang}</strong> left`;
         }
 
         function updateTotal() {
@@ -140,14 +131,9 @@
         window.onload = () => {
             populateDates();
             renderDumplings();
-
-            const dateSelect = document.getElementById('collectionDate');
-            dateSelect.addEventListener('change', updateAvailability);
-            
+            document.getElementById('collectionDate').addEventListener('change', updateAvailability);
             document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
-
-            // Set default date
-            dateSelect.value = "2026/06/24";
+            document.getElementById('collectionDate').value = "2026/06/24";
             updateAvailability();
         };
 
@@ -184,6 +170,11 @@
 
                 if (res.ok) {
                     alert("✅ Order submitted successfully!");
+
+                    // Send WhatsApp Notification
+                    const message = `New Beef Rendang Order!%0A%0AName: ${document.getElementById('name').value}%0APhone: ${document.getElementById('phone').value}%0ADate: ${date}%0AQty: ${qty}%0ATotal: RM${qty * 7}`;
+                    window.open(`https://wa.me/6589877278?text=${message}`, '_blank');   // ← CHANGE THIS NUMBER
+
                     this.reset();
                     renderDumplings();
                     updateTotal();
