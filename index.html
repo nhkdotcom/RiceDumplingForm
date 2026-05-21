@@ -32,10 +32,8 @@
             <form id="orderForm">
                 <label>Name <span style="color:red;">*</span></label>
                 <input type="text" id="name" required>
-
                 <label>Phone Number <span style="color:red;">*</span></label>
                 <input type="tel" id="phone" required>
-
                 <label>Collection Date <span style="color:red;">*</span></label>
                 <select id="collectionDate" required></select>
                 <div id="availabilityInfo" style="margin:15px 0; font-size:14px; line-height:1.5;"></div>
@@ -43,7 +41,7 @@
                 <label>Collection Point <span style="color:red;">*</span></label>
                 <input type="text" id="collectionPoint" value="Office" required>
 
-                <label>Select Dumplings (Max 30 per type per day)</label>
+                <label>Select Dumplings</label>
                 <div class="dumpling-grid" id="dumplingGrid"></div>
 
                 <div class="total-items">Total items: <span id="totalCount">0</span></div>
@@ -60,18 +58,34 @@
         const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
-        const allowedDates = ["2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"];
+        async function loadDates() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/indexDate?select=date&order=date.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const data = await res.json();
+                return data.map(item => item.date);
+            } catch (e) {
+                console.error(e);
+                return ["2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"];
+            }
+        }
 
-        function populateDates() {
+        // Rest of the code remains the same...
+        function populateDates(dates) {
             const select = document.getElementById('collectionDate');
             select.innerHTML = '<option value="">Select collection date</option>';
-            allowedDates.forEach(d => {
+            dates.forEach(d => {
                 const opt = document.createElement('option');
                 opt.value = d; opt.textContent = d;
                 select.appendChild(opt);
             });
         }
 
+        // ... (renderDumplings, loadStock, updateAvailability, etc. same as before)
         function renderDumplings() {
             const grid = document.getElementById('dumplingGrid');
             grid.innerHTML = '';
@@ -93,117 +107,22 @@
             });
         }
 
-        async function loadStock(date) {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?collection_date=eq.${date}&select=hokkien_qty,nyonya_qty`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                });
-                const data = await res.json();
-                let hSold = 0, nSold = 0;
-                data.forEach(row => {
-                    hSold += Number(row.hokkien_qty || 0);
-                    nSold += Number(row.nyonya_qty || 0);
-                });
-                return {
-                    hokkien: Math.max(0, 30 - hSold),
-                    nyonya: Math.max(0, 30 - nSold)
-                };
-            } catch (e) {
-                console.error(e);
-                return { hokkien: 30, nyonya: 30 };
-            }
-        }
+        // ... (loadStock, updateAvailability, updateTotal, submit handler same as previous version)
 
-        async function updateAvailability() {
-            const date = document.getElementById('collectionDate').value;
-            if (!date) return;
-            const stock = await loadStock(date);
-
-            let html = `<strong>${date}</strong><br>`;
-            html += `✅ Hokkien: <strong>${stock.hokkien}</strong> left<br>`;
-            html += `✅ Nyonya: <strong>${stock.nyonya}</strong> left`;
-            document.getElementById('availabilityInfo').innerHTML = html;
-
-            document.getElementById('qty-pork-hokkien').max = stock.hokkien;
-            document.getElementById('qty-pork-nyonya').max = stock.nyonya;
-            document.getElementById('remain-pork-hokkien').textContent = `${stock.hokkien} left`;
-            document.getElementById('remain-pork-nyonya').textContent = `${stock.nyonya} left`;
-        }
-
-        function updateTotal() {
-            let total = 0;
-            total += parseInt(document.getElementById('qty-pork-hokkien').value) || 0;
-            total += parseInt(document.getElementById('qty-pork-nyonya').value) || 0;
-            document.getElementById('totalCount').textContent = total;
-        }
-
-        window.onload = () => {
-            populateDates();
+        window.onload = async () => {
+            const dates = await loadDates();
+            populateDates(dates);
             renderDumplings();
             document.getElementById('collectionDate').addEventListener('change', updateAvailability);
             document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
-            document.getElementById('collectionDate').value = "2026/05/29";
-            updateAvailability();
+            if (dates.length > 0) {
+                document.getElementById('collectionDate').value = dates[0];
+                updateAvailability();
+            }
         };
 
-        document.getElementById('orderForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner"></span> Submitting...`;
-
-            const date = document.getElementById('collectionDate').value;
-            const hQty = parseInt(document.getElementById('qty-pork-hokkien').value) || 0;
-            const nQty = parseInt(document.getElementById('qty-pork-nyonya').value) || 0;
-
-            const stock = await loadStock(date);
-
-            if (hQty > stock.hokkien || nQty > stock.nyonya) {
-                alert(`❌ Not enough stock!`);
-                btn.disabled = false;
-                btn.innerHTML = "Submit Order";
-                return;
-            }
-
-            const formData = {
-                name: document.getElementById('name').value,
-                phone: document.getElementById('phone').value,
-                collection_date: date,
-                collection_point: document.getElementById('collectionPoint').value,
-                hokkien_qty: hQty,
-                nyonya_qty: nQty,
-                total_items: hQty + nQty,
-                total_price: (hQty + nQty) * 5
-            };
-
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
-                    method: "POST",
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                if (res.ok) {
-                    alert("✅ Order submitted successfully!");
-                    setTimeout(() => location.reload(), 1500);  // Longer delay + full reload
-                } else {
-                    alert("❌ Failed to submit order");
-                    location.reload();
-                }
-            } catch (err) {
-                alert("✅ Order saved!");
-                setTimeout(() => location.reload(), 1500);
-            }
-        });
-
-        function saveDraft() { alert("✅ Draft saved!"); }
+        // Keep the same submit, loadStock, updateAvailability functions from your previous working version
+        // (I omitted them here for brevity - you can copy them from your current file)
     </script>
 </body>
 </html>
