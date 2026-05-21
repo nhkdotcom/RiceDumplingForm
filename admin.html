@@ -103,13 +103,14 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         async function loadAllOrders() {
-            // Rice Dumpling
+            // Rice Dumpling Orders
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
                     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
                 let orders = await res.json();
 
+                // Summary
                 const summary = {};
                 orders.forEach(o => {
                     const date = o.collection_date;
@@ -118,7 +119,6 @@
                     summary[date].nyonya += Number(o.nyonya_qty || 0);
                 });
 
-                // Summary
                 const sumBody = document.querySelector('#riceSummary tbody');
                 sumBody.innerHTML = '';
                 Object.keys(summary).sort().reverse().forEach(date => {
@@ -134,7 +134,7 @@
                     sumBody.appendChild(row);
                 });
 
-                // Detailed
+                // Detailed Rice
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
                 const detailBody = document.querySelector('#riceDetail tbody');
                 detailBody.innerHTML = '';
@@ -154,13 +154,14 @@
                 });
             } catch (e) { console.error(e); }
 
-            // Beef Rendang
+            // Beef Rendang Orders
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders`, {
                     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
                 let orders = await res.json();
 
+                // Summary
                 const summary = {};
                 orders.forEach(o => {
                     const date = o.collection_date;
@@ -180,6 +181,7 @@
                     sumBody.appendChild(row);
                 });
 
+                // Detailed Rendang
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
                 const detailBody = document.querySelector('#rendangDetail tbody');
                 detailBody.innerHTML = '';
