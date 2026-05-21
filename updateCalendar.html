@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Calendar - Admin</title>
+    <style>
+        body {font-family: 'Segoe UI', sans-serif; margin:20px; background:#f8f9fa;}
+        h1 {text-align:center; color:#333;}
+        h2 {color:#334d8f; margin:25px 0 10px;}
+        .container {max-width:900px; margin:auto;}
+        table {width:100%; border-collapse:collapse; margin:15px 0; background:white;}
+        th, td {padding:12px; border:1px solid #ddd; text-align:left;}
+        th {background:#334d8f; color:white;}
+        .rendang th {background:#d35400;}
+        input[type="text"] {padding:10px; width:200px; font-size:16px;}
+        button {padding:10px 15px; margin:5px; border:none; border-radius:6px; cursor:pointer;}
+        .add-btn {background:#28a745; color:white;}
+        .delete-btn {background:#dc3545; color:white;}
+        .refresh-btn {background:#007bff; color:white;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 Update Calendar</h1>
+        <p style="text-align:center;">Add or remove available collection dates</p>
+
+        <!-- Rice Dumpling Dates -->
+        <h2>🍚 Rice Dumpling Dates (indexDate)</h2>
+        <input type="text" id="riceDateInput" placeholder="yyyy/mm/dd" />
+        <button class="add-btn" onclick="addDate('indexDate')">Add Date</button>
+        <button class="refresh-btn" onclick="loadDates()">Refresh</button>
+        <table id="riceTable">
+            <thead><tr><th>Date</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+        </table>
+
+        <!-- Beef Rendang Dates -->
+        <h2>🥩 Beef Rendang Dates (RendangDate)</h2>
+        <input type="text" id="rendangDateInput" placeholder="yyyy/mm/dd" />
+        <button class="add-btn" onclick="addDate('RendangDate')">Add Date</button>
+        <button class="refresh-btn" onclick="loadDates()">Refresh</button>
+        <table id="rendangTable">
+            <thead><tr><th>Date</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
+
+        async function loadDates() {
+            await loadTable('indexDate', 'riceTable');
+            await loadTable('RendangDate', 'rendangTable');
+        }
+
+        async function loadTable(tableName, tableId) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?select=date&order=date.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const data = await res.json();
+                const tbody = document.querySelector(`#${tableId} tbody`);
+                tbody.innerHTML = '';
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${item.date}</strong></td>
+                        <td><button class="delete-btn" onclick="deleteDate('${tableName}', '${item.date}', this)">Delete</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function addDate(tableName) {
+            const inputId = tableName === 'indexDate' ? 'riceDateInput' : 'rendangDateInput';
+            const date = document.getElementById(inputId).value.trim();
+
+            if (!date) {
+                alert("Please enter a date (yyyy/mm/dd)");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${tableName}`, {
+                    method: "POST",
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ date: date })
+                });
+
+                if (res.ok) {
+                    alert(`✅ Date ${date} added successfully!`);
+                    document.getElementById(inputId).value = '';
+                    loadDates();
+                } else {
+                    alert("❌ Failed to add date");
+                }
+            } catch (e) {
+                alert("❌ Error: " + e.message);
+            }
+        }
+
+        async function deleteDate(tableName, date, btn) {
+            if (!confirm(`Delete date ${date}?`)) return;
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/${tableName}?date=eq.${date}`, {
+                    method: "DELETE",
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (res.ok) {
+                    btn.parentElement.parentElement.remove();
+                    alert(`✅ Date ${date} deleted`);
+                } else {
+                    alert("❌ Failed to delete");
+                }
+            } catch (e) {
+                alert("❌ Error");
+            }
+        }
+
+        window.onload = loadDates;
+    </script>
+</body>
+</html>
