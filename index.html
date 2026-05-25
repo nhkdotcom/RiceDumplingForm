@@ -67,19 +67,20 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         async function loadDates() {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/indexDate?select=date&order=date.asc`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                });
-                const data = await res.json();
-                return data.map(item => item.date);
-            } catch (e) {
-                console.error("Failed to load dates from indexDate table", e);
-                return ["2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"];
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/indexDate?select=date&order=date.asc`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Failed to load indexDate: ${res.status} ${errorText}`);
             }
+
+            const data = await res.json();
+            return data.map(item => item.date);
         }
 
         function populateDates(dates) {
@@ -161,14 +162,21 @@
         }
 
         window.onload = async () => {
-            const dates = await loadDates();
-            populateDates(dates);
             renderDumplings();
             document.getElementById('collectionDate').addEventListener('change', updateAvailability);
             document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
-            if (dates.length > 0) {
-                document.getElementById('collectionDate').value = dates[0];
-                updateAvailability();
+
+            try {
+                const dates = await loadDates();
+                populateDates(dates);
+                if (dates.length > 0) {
+                    document.getElementById('collectionDate').value = dates[0];
+                    updateAvailability();
+                }
+            } catch (e) {
+                console.error(e);
+                populateDates([]);
+                document.getElementById('availabilityInfo').innerHTML = '❌ Unable to load available dates. Please contact admin.';
             }
         };
 
