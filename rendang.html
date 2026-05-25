@@ -67,7 +67,7 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         async function loadDates() {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/RendangDate?select=date&order=date.asc`, {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/RendangDate?select=date&order=date.desc`, {
                 headers: {
                     'apikey': SUPABASE_ANON_KEY,
                     'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
