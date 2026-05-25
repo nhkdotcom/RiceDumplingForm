@@ -14,21 +14,34 @@
         .rendang th {background:#d35400;}
         .summary {background:#e8f5e9;}
         .summary th {background:#28a745;}
-        .refresh-btn {
-            padding:12px 20px; 
-            background:#28a745; 
-            color:white; 
-            border:none; 
-            border-radius:8px; 
-            cursor:pointer; 
-            font-size:16px;
+        .action-bar {
+            display:flex;
+            justify-content:center;
+            gap:12px;
+            flex-wrap:wrap;
+            margin-bottom:20px;
         }
+        .refresh-btn, .nav-btn {
+            display:inline-block;
+            padding:12px 20px;
+            color:white;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:16px;
+            text-decoration:none;
+        }
+        .refresh-btn {background:#28a745;}
+        .nav-btn {background:#334d8f;}
         .section {margin-bottom:50px;}
     </style>
 </head>
 <body>
     <h1>📋 Admin Panel - All Orders</h1>
-    <button class="refresh-btn" onclick="loadAllOrders()">🔄 Refresh All Data</button>
+    <div class="action-bar">
+        <button class="refresh-btn" onclick="loadAllOrders()">🔄 Refresh All Data</button>
+        <a class="nav-btn" href="checkOrder.html">🔎 Check Orders</a>
+    </div>
 
     <!-- Rice Dumpling Summary -->
     <div class="section">
