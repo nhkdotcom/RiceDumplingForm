@@ -66,8 +66,23 @@
         const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
-        function populateDates() {
-            const dates = ["2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"];
+        async function loadDates() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/indexDate?select=date&order=date.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const data = await res.json();
+                return data.map(item => item.date);
+            } catch (e) {
+                console.error("Failed to load dates from indexDate table", e);
+                return ["2026/05/29","2026/06/03","2026/06/04","2026/06/05","2026/06/10","2026/06/11","2026/06/12"];
+            }
+        }
+
+        function populateDates(dates) {
             const select = document.getElementById('collectionDate');
             select.innerHTML = '<option value="">Select collection date</option>';
             dates.forEach(d => {
@@ -145,13 +160,16 @@
             document.getElementById('totalCount').textContent = total;
         }
 
-        window.onload = () => {
-            populateDates();
+        window.onload = async () => {
+            const dates = await loadDates();
+            populateDates(dates);
             renderDumplings();
             document.getElementById('collectionDate').addEventListener('change', updateAvailability);
             document.getElementById('dumplingGrid').addEventListener('input', updateTotal);
-            document.getElementById('collectionDate').value = "2026/05/29";
-            updateAvailability();
+            if (dates.length > 0) {
+                document.getElementById('collectionDate').value = dates[0];
+                updateAvailability();
+            }
         };
 
         document.getElementById('orderForm').addEventListener('submit', async function(e) {
