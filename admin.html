@@ -107,6 +107,7 @@
                     <th>Phone</th>
                     <th>Point</th>
                     <th>Quantity</th>
+                    <th>Paid</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -140,6 +141,34 @@
             } catch (e) {
                 checkbox.checked = !isPaid;
                 alert(`❌ Unable to update Paid status: ${e.message}`);
+            } finally {
+                row.classList.remove('saving');
+            }
+        }
+
+        async function updateRendangPaid(orderId, isPaid, checkbox) {
+            const row = checkbox.closest('tr');
+            row.classList.add('saving');
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?id=eq.${orderId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({ Paid: isPaid })
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(errorText || 'Failed to update Paid status');
+                }
+            } catch (e) {
+                checkbox.checked = !isPaid;
+                alert(`❌ Unable to update Beef Rendang Paid status: ${e.message}`);
             } finally {
                 row.classList.remove('saving');
             }
@@ -229,6 +258,8 @@
                 detailBody.innerHTML = '';
                 orders.forEach(o => {
                     const row = document.createElement('tr');
+                    const orderId = o.id ?? '';
+                    const paidChecked = o.Paid ? 'checked' : '';
                     row.innerHTML = `
                         <td><strong>${o.collection_date}</strong></td>
                         <td>${o.created_at ? new Date(o.created_at).toLocaleString() : ''}</td>
@@ -236,6 +267,9 @@
                         <td>${o.phone || ''}</td>
                         <td>${o.collection_point || ''}</td>
                         <td><strong>${o.rendang_qty || 0}</strong></td>
+                        <td class="paid-cell">
+                            <input type="checkbox" class="paid-checkbox" ${paidChecked} ${orderId === '' ? 'disabled' : ''} onchange="updateRendangPaid('${orderId}', this.checked, this)">
+                        </td>
                     `;
                     detailBody.appendChild(row);
                 });
