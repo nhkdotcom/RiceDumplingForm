@@ -204,7 +204,7 @@
                     sumBody.appendChild(row);
                 });
 
-                orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
+                orders.sort((a, b) => a.collection_date.localeCompare(b.collection_date));
                 const detailBody = document.querySelector('#riceDetail tbody');
                 detailBody.innerHTML = '';
                 orders.forEach(o => {
@@ -253,7 +253,7 @@
                     sumBody.appendChild(row);
                 });
 
-                orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
+                orders.sort((a, b) => a.collection_date.localeCompare(b.collection_date));
                 const detailBody = document.querySelector('#rendangDetail tbody');
                 detailBody.innerHTML = '';
                 orders.forEach(o => {
