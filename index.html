@@ -9,6 +9,9 @@
         .form-container {background:white; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:520px; overflow:hidden;}
         .header {background:#334d8f; color:white; padding:20px; text-align:center; font-size:24px; font-weight:600;}
         .form-body {padding:30px;}
+        .check-order-link {text-align:center; margin-bottom:20px;}
+        .check-order-link a {color:#334d8f; font-weight:600; text-decoration:none;}
+        .check-order-link a:hover {text-decoration:underline;}
         label {display:block; margin-bottom:8px; font-weight:600; color:#333;}
         input, select {width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; margin-bottom:20px;}
         .dumpling-grid {display:grid; grid-template-columns:1fr; gap:15px; margin:20px 0;}
@@ -29,6 +32,9 @@
     <div class="form-container">
         <div class="header">Rice Dumpling Order Form</div>
         <div class="form-body">
+            <div class="check-order-link">
+                <a href="checkOrder.html">Check your order here</a>
+            </div>
             <form id="orderForm">
                 <label>Name <span style="color:red;">*</span></label>
                 <input type="text" id="name" required>
