@@ -67,19 +67,20 @@
         const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
 
         async function loadDates() {
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/RendangDate?select=date&order=date.asc`, {
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    }
-                });
-                const data = await res.json();
-                return data.map(item => item.date);
-            } catch (e) {
-                console.error("Failed to load dates from RendangDate table", e);
-                return ["2026/06/24", "2026/06/25", "2026/06/26", "2026/07/01", "2026/07/02"];
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/RendangDate?select=date&order=date.asc`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Failed to load RendangDate: ${res.status} ${errorText}`);
             }
+
+            const data = await res.json();
+            return data.map(item => item.date);
         }
 
         function populateDates(dates) {
@@ -133,16 +134,23 @@
         }
 
         window.onload = async () => {
-            const dates = await loadDates();
-            populateDates(dates);
             renderDumplings();
             document.getElementById('collectionDate').addEventListener('change', updateAvailability);
             document.getElementById('qty-rendang').addEventListener('input', () => {
                 document.getElementById('totalCount').textContent = document.getElementById('qty-rendang').value || 0;
             });
-            if (dates.length > 0) {
-                document.getElementById('collectionDate').value = dates[0];
-                updateAvailability();
+
+            try {
+                const dates = await loadDates();
+                populateDates(dates);
+                if (dates.length > 0) {
+                    document.getElementById('collectionDate').value = dates[0];
+                    updateAvailability();
+                }
+            } catch (e) {
+                console.error(e);
+                populateDates([]);
+                document.getElementById('availabilityInfo').innerHTML = '❌ Unable to load available dates. Please contact admin.';
             }
         };
 
