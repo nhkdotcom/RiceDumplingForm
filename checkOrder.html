@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check My Order</title>
+    <style>
+        body {font-family: 'Segoe UI', sans-serif; margin:20px; background:#f8f9fa;}
+        .container {max-width:700px; margin:auto; background:white; padding:30px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.1);}
+        h1 {text-align:center; color:#333;}
+        input {width:100%; padding:15px; font-size:18px; border:1px solid #ddd; border-radius:8px; margin-bottom:15px;}
+        button {width:100%; padding:15px; background:#334d8f; color:white; border:none; border-radius:8px; font-size:18px; cursor:pointer;}
+        .order-card {background:#f8f9fa; padding:15px; margin:15px 0; border-radius:8px; border-left:5px solid #334d8f;}
+        .rendang {border-left-color:#d35400;}
+        .no-order {text-align:center; color:#666; padding:30px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Check My Order</h1>
+        <p style="text-align:center;">Enter your phone number to view your order(s)</p>
+        
+        <input type="tel" id="phoneInput" placeholder="Enter your phone number" />
+        <button onclick="checkOrder()">Search Order</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://gnfsbbnekmbgttrhmavu.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_FlPMHCir5_TOuROiv0DwNw_deMtyPI-";
+
+        async function checkOrder() {
+            const phone = document.getElementById('phoneInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p style="text-align:center;">Searching...</p>';
+
+            if (!phone) {
+                resultDiv.innerHTML = '<p style="color:red; text-align:center;">Please enter your phone number</p>';
+                return;
+            }
+
+            let html = '';
+
+            // Check Rice Dumpling Orders
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?phone=eq.${phone}&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const riceOrders = await res.json();
+
+                if (riceOrders.length > 0) {
+                    html += `<h2 style="color:#334d8f;">🍚 Rice Dumpling Orders</h2>`;
+                    riceOrders.forEach(o => {
+                        html += `
+                            <div class="order-card">
+                                <strong>Collection Date:</strong> ${o.collection_date}<br>
+                                <strong>Name:</strong> ${o.name}<br>
+                                <strong>Hokkien:</strong> ${o.hokkien_qty || 0} &nbsp;&nbsp; 
+                                <strong>Nyonya:</strong> ${o.nyonya_qty || 0}<br>
+                                <strong>Total Dumplings:</strong> ${(o.hokkien_qty || 0) + (o.nyonya_qty || 0)}<br>
+                                <strong>Collection Point:</strong> ${o.collection_point}
+                            </div>`;
+                    });
+                }
+            } catch (e) { console.error(e); }
+
+            // Check Beef Rendang Orders
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/beef_rendang_orders?phone=eq.${phone}&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                const rendangOrders = await res.json();
+
+                if (rendangOrders.length > 0) {
+                    html += `<h2 style="color:#d35400;">🥩 Beef Rendang Orders</h2>`;
+                    rendangOrders.forEach(o => {
+                        html += `
+                            <div class="order-card rendang">
+                                <strong>Collection Date:</strong> ${o.collection_date}<br>
+                                <strong>Name:</strong> ${o.name}<br>
+                                <strong>Quantity:</strong> ${o.rendang_qty} pcs<br>
+                                <strong>Collection Point:</strong> ${o.collection_point}
+                            </div>`;
+                    });
+                }
+            } catch (e) { console.error(e); }
+
+            if (html === '') {
+                resultDiv.innerHTML = `<div class="no-order">No order found for phone number <strong>${phone}</strong></div>`;
+            } else {
+                resultDiv.innerHTML = html;
+            }
+        }
+
+        // Allow pressing Enter key
+        document.getElementById('phoneInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkOrder();
+        });
+    </script>
+</body>
+</html>
