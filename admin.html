@@ -125,7 +125,6 @@
                 });
                 let orders = await res.json();
 
-                // Summary
                 const summary = {};
                 orders.forEach(o => {
                     const date = o.collection_date;
@@ -149,7 +148,6 @@
                     sumBody.appendChild(row);
                 });
 
-                // Detailed Rice
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
                 const detailBody = document.querySelector('#riceDetail tbody');
                 detailBody.innerHTML = '';
@@ -176,7 +174,6 @@
                 });
                 let orders = await res.json();
 
-                // Summary
                 const summary = {};
                 orders.forEach(o => {
                     const date = o.collection_date;
@@ -196,7 +193,6 @@
                     sumBody.appendChild(row);
                 });
 
-                // Detailed Rendang
                 orders.sort((a, b) => b.collection_date.localeCompare(a.collection_date));
                 const detailBody = document.querySelector('#rendangDetail tbody');
                 detailBody.innerHTML = '';
